@@ -37,6 +37,24 @@
                 inset 0 0 20px rgba(255, 255, 255, 0.05);
         }
 
+        /* Logo styling */
+        .logo-container {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .logo {
+            max-width: 180px;
+            height: auto;
+            filter: drop-shadow(0 4px 20px rgba(102, 126, 234, 0.3));
+            animation: logoGlow 3s ease-in-out infinite;
+        }
+
+        @keyframes logoGlow {
+            0%, 100% { filter: drop-shadow(0 4px 20px rgba(102, 126, 234, 0.3)); }
+            50% { filter: drop-shadow(0 4px 30px rgba(102, 126, 234, 0.5)); }
+        }
+
         /* AI-styled Typography */
         h1 {
             text-align: center;
@@ -421,6 +439,10 @@
     <div class="ai-glow" style="bottom: 20%; right: 10%;"></div>
     
     <div class="container">
+        <div class="logo-container">
+            <img src="https://storage.googleapis.com/msgsndr/brVlqFMnIMfHtotzY2u0/media/6858cb53b2497336c3b5ac8e.png" alt="Logo" class="logo">
+        </div>
+        
         <h1>AI Market Analyzer</h1>
         <p class="subtitle">Powered by Advanced Real Estate Intelligence</p>
         
