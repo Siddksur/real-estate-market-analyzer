@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real Estate Agent Performance Analyzer</title>
+    
+    <!-- Inline CSS for self-contained solution -->
+    <style>
+        /* Reset and Base Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f5f5f5;
+            padding: 20px;
+        }
+
+        /* Container */
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        /* Typography */
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 30px;
+            font-size: 24px;
+        }
+
+        /* Form Styles */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #555;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #4CAF50;
+        }
+
+        /* Radio Button Group */
+        .radio-group {
+            display: flex;
+            gap: 20px;
+            margin-top: 10px;
+        }
+
+        .radio-wrapper {
+            display: flex;
+            align-items: center;
+        }
+
+        input[type="radio"] {
+            margin-right: 8px;
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .radio-wrapper label {
+            margin: 0;
+            font-weight: normal;
+            cursor: pointer;
+        }
+
+        /* Submit Button */
+        .submit-btn {
+            width: 100%;
+            padding: 14px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .submit-btn:hover {
+            background-color: #45a049;
+        }
+
+        .submit-btn:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        /* Results Section */
+        #results {
+            margin-top: 30px;
+            padding-top: 30px;
+            border-top: 2px solid #eee;
+            display: none;
+        }
+
+        .score-container {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .score-label {
+            font-size: 18px;
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .score-value {
+            font-size: 48px;
+            font-weight: bold;
+            color: #4CAF50;
+        }
+
+        .chart-container {
+            max-width: 300px;
+            margin: 0 auto 30px;
+        }
+
+        .summary-container {
+            background-color: #f9f9f9;
+            padding: 20px;
+            border-radius: 5px;
+            border-left: 4px solid #4CAF50;
+        }
+
+        .summary-title {
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .summary-text {
+            color: #666;
+            line-height: 1.8;
+        }
+
+        /* Loading State */
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+
+        /* Error State */
+        .error {
+            background-color: #fee;
+            color: #c33;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 480px) {
+            .container {
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 20px;
+            }
+            
+            .radio-group {
+                flex-direction: column;
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Real Estate Agent Performance Analyzer</h1>
+        
+        <!-- Main Form -->
+        <form id="analysisForm">
+            <div class="form-group">
+                <label for="city">City Name</label>
+                <input 
+                    type="text" 
+                    id="city" 
+                    name="city" 
+                    placeholder="Enter city name (e.g., San Francisco)" 
+                    required
+                >
+            </div>
+            
+            <div class="form-group">
+                <label>Agent Type</label>
+                <div class="radio-group">
+                    <div class="radio-wrapper">
+                        <input 
+                            type="radio" 
+                            id="buyer" 
+                            name="type" 
+                            value="Buyer" 
+                            checked
+                        >
+                        <label for="buyer">Buyer's Agent</label>
+                    </div>
+                    <div class="radio-wrapper">
+                        <input 
+                            type="radio" 
+                            id="seller" 
+                            name="type" 
+                            value="Seller"
+                        >
+                        <label for="seller">Seller's Agent</label>
+                    </div>
+                </div>
+            </div>
+            
+            <button type="submit" class="submit-btn">Analyze Performance</button>
+        </form>
+        
+        <!-- Results Container -->
+        <div id="results"></div>
+    </div>
+
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    
+    <!-- Application JavaScript -->
+    <script>
+        // Configuration - Replace with your actual n8n webhook URL
+        const N8N_WEBHOOK_URL = '{{N8N_WEBHOOK_URL}}'; // Replace this placeholder
+        
+        // DOM Elements
+        const form = document.getElementById('analysisForm');
+        const resultsDiv = document.getElementById('results');
+        const submitBtn = form.querySelector('.submit-btn');
+        
+        // Chart instance (to destroy on re-render)
+        let chartInstance = null;
+        
+        // Form Submit Handler
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            // Get form data
+            const city = document.getElementById('city').value.trim();
+            const type = document.querySelector('input[name="type"]:checked').value;
+            
+            // Validate webhook URL
+            if (N8N_WEBHOOK_URL === '{{N8N_WEBHOOK_URL}}') {
+                showError('Please configure the N8N_WEBHOOK_URL in the script.');
+                return;
+            }
+            
+            // Show loading state
+            showLoading();
+            
+            try {
+                // Make API call to n8n webhook
+                const response = await fetch(N8N_WEBHOOK_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ city, type })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                // Render results
+                renderResults(data);
+                
+            } catch (error) {
+                console.error('Error:', error);
+                showError('Failed to analyze performance. Please check your connection and try again.');
+            }
+        });
+        
+        // Show loading state
+        function showLoading() {
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Analyzing...';
+            resultsDiv.style.display = 'none';
+            resultsDiv.innerHTML = '<div class="loading">Analyzing real estate market data...</div>';
+            resultsDiv.style.display = 'block';
+        }
+        
+        // Show error message
+        function showError(message) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Analyze Performance';
+            resultsDiv.innerHTML = `<div class="error">${message}</div>`;
+            resultsDiv.style.display = 'block';
+        }
+        
+        // Render results from API response
+        function renderResults(data) {
+            // Reset button state
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Analyze Performance';
+            
+            // Validate response data
+            if (!data.score || !data.chartData || !data.summary) {
+                showError('Invalid response data received.');
+                return;
+            }
+            
+            // Build results HTML
+            resultsDiv.innerHTML = `
+                <div class="score-container">
+                    <div class="score-label">Performance Score</div>
+                    <div class="score-value">${data.score}</div>
+                </div>
+                
+                <div class="chart-container">
+                    <canvas id="performanceChart"></canvas>
+                </div>
+                
+                <div class="summary-container">
+                    <div class="summary-title">Market Analysis Summary</div>
+                    <div class="summary-text">${data.summary}</div>
+                </div>
+            `;
+            
+            // Show results
+            resultsDiv.style.display = 'block';
+            
+            // Render chart
+            renderChart(data.chartData, data.score);
+        }
+        
+        // Render Chart.js visualization
+        function renderChart(chartData, score) {
+            const ctx = document.getElementById('performanceChart').getContext('2d');
+            
+            // Destroy previous chart instance if exists
+            if (chartInstance) {
+                chartInstance.destroy();
+            }
+            
+            // Determine chart type and data based on response
+            if (chartData.type === 'radial' || chartData.type === 'doughnut') {
+                // Radial/Doughnut chart for single score
+                chartInstance = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        datasets: [{
+                            data: [score, 100 - score],
+                            backgroundColor: ['#4CAF50', '#e0e0e0'],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        cutout: '70%',
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                enabled: false
+                            }
+                        }
+                    }
+                });
+            } else {
+                // Bar chart for multiple metrics
+                const labels = chartData.labels || ['Performance'];
+                const values = chartData.values || [score];
+                
+                chartInstance = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Score',
+                            data: values,
+                            backgroundColor: '#4CAF50',
+                            borderColor: '#45a049',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 100,
+                                ticks: {
+                                    callback: function(value) {
+                                        return value + '%';
+                                    }
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        }
+                    }
+                });
+            }
+        }
+    </script>
+</body>
+</html>
