@@ -440,11 +440,16 @@
     
     <div class="container">
         <div class="logo-container">
-            <img src="https://storage.googleapis.com/msgsndr/brVlqFMnIMfHtotzY2u0/media/6858c9bbe73b2c61bfa51445.png" alt="Logo" class="logo">
+            <img src="https://storage.googleapis.com/msgsndr/brVlqFMnIMfHtotzY2u0/media/6858cb53b2497336c3b5ac8e.png" alt="Logo" class="logo">
         </div>
         
         <h1>AI Market Analyzer</h1>
         <p class="subtitle">Powered by Advanced Real Estate Intelligence</p>
+        
+        <!-- Usage indicator -->
+        <div style="text-align: center; margin-bottom: 20px; color: #a0a0a0; font-size: 13px;">
+            <span id="usageIndicator"></span>
+        </div>
         
         <!-- Main Form -->
         <form id="analysisForm">
@@ -498,6 +503,7 @@
     <script>
         // Configuration - Replace with your actual n8n webhook URL
         const N8N_WEBHOOK_URL = 'https://siddharthsur.app.n8n.cloud/webhook/real-estate-market-analysis';
+        const DAILY_LIMIT = 2; // Change this to set daily limit
         
         // DOM Elements
         const form = document.getElementById('analysisForm');
@@ -507,9 +513,45 @@
         // Chart instance (to destroy on re-render)
         let chartInstance = null;
         
+        // Rate limiting functions
+        function getRateLimitData() {
+            const data = localStorage.getItem('marketAnalyzerUsage');
+            if (!data) return { date: new Date().toDateString(), count: 0 };
+            
+            const parsed = JSON.parse(data);
+            // Reset if it's a new day
+            if (parsed.date !== new Date().toDateString()) {
+                return { date: new Date().toDateString(), count: 0 };
+            }
+            return parsed;
+        }
+        
+        function incrementUsage() {
+            const data = getRateLimitData();
+            data.count += 1;
+            localStorage.setItem('marketAnalyzerUsage', JSON.stringify(data));
+            return data.count;
+        }
+        
+        function checkRateLimit() {
+            const data = getRateLimitData();
+            return data.count < DAILY_LIMIT;
+        }
+        
+        function getRemainingUses() {
+            const data = getRateLimitData();
+            return Math.max(0, DAILY_LIMIT - data.count);
+        }
+        
         // Form Submit Handler
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
+            
+            // Check rate limit
+            if (!checkRateLimit()) {
+                showError(`Daily limit reached. You have used all ${DAILY_LIMIT} analyses for today. Please come back tomorrow!`);
+                return;
+            }
             
             // Get form data
             const city = document.getElementById('city').value.trim();
@@ -543,8 +585,12 @@
                 // Handle array response from n8n
                 const resultData = Array.isArray(data) ? data[0] : data;
                 
+                // Increment usage on successful response
+                const usageCount = incrementUsage();
+                const remaining = getRemainingUses();
+                
                 // Render results
-                renderResults(resultData);
+                renderResults(resultData, remaining);
                 
             } catch (error) {
                 console.error('Error:', error);
@@ -604,7 +650,7 @@
         }
         
         // Render results from API response
-        function renderResults(data) {
+        function renderResults(data, remainingUses) {
             // Reset button state
             submitBtn.disabled = false;
             submitBtn.textContent = 'Analyze Market';
@@ -618,7 +664,7 @@
             // Build results HTML
             resultsDiv.innerHTML = `
                 <div class="score-container">
-                    <div class="score-label">AI Ad Performance Score</div>
+                    <div class="score-label">AI Performance Score</div>
                     <div class="score-value">${data.score}</div>
                 </div>
                 
@@ -637,6 +683,13 @@
                     <div class="detailed-text">${parseMarkdown(data.detailedAnalysis)}</div>
                 </div>
                 ` : ''}
+                
+                <div style="text-align: center; margin-top: 20px; padding: 15px; background: rgba(255, 255, 255, 0.05); border-radius: 10px; color: #a0a0a0; font-size: 14px;">
+                    ${remainingUses > 0 
+                        ? `You have <strong style="color: #667eea;">${remainingUses}</strong> ${remainingUses === 1 ? 'analysis' : 'analyses'} remaining today.`
+                        : `You've used all your analyses for today. Come back tomorrow!`
+                    }
+                </div>
             `;
             
             // Show results
@@ -760,6 +813,24 @@
                 });
             }
         }
+        
+        // Update usage indicator on page load
+        function updateUsageIndicator() {
+            const remaining = getRemainingUses();
+            const indicator = document.getElementById('usageIndicator');
+            if (indicator) {
+                if (remaining > 0) {
+                    indicator.innerHTML = `${remaining} ${remaining === 1 ? 'analysis' : 'analyses'} remaining today`;
+                } else {
+                    indicator.innerHTML = `Daily limit reached. Come back tomorrow!`;
+                    submitBtn.disabled = true;
+                    submitBtn.textContent = 'Limit Reached';
+                }
+            }
+        }
+        
+        // Initialize on page load
+        updateUsageIndicator();
     </script>
 </body>
 </html>
